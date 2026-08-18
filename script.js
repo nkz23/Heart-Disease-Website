@@ -252,3 +252,89 @@ function enableUnsavedWarning() {
     }
   };
 }
+
+
+const COLAB_BASE_URL = "https://your-ngrok-subdomain.ngrok-free.app";
+let isDatabaseOnline = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Initial check on page load and periodic ping every 10 seconds
+  checkDatabaseStatus();
+  setInterval(checkDatabaseStatus, 10000);
+
+  // ... rest of your event listeners ...
+});
+
+/**
+ * Checks if the Colab Flask server is online and updates status pills
+ */
+async function checkDatabaseStatus() {
+  try {
+    const response = await fetch(`${COLAB_BASE_URL}/api/health`, { method: "GET" });
+    if (response.ok) {
+      updateStatusPills(true);
+      if (!isDatabaseOnline) {
+        // If coming back online, sync any unsaved offline entries
+        syncOfflineRecords();
+      }
+      isDatabaseOnline = true;
+    } else {
+      updateStatusPills(false);
+      isDatabaseOnline = false;
+    }
+  } catch (err) {
+    updateStatusPills(false);
+    isDatabaseOnline = false;
+  }
+}
+
+/**
+ * Updates status pills across views to reflect current active state
+ */
+function updateStatusPills(online) {
+  const statusPills = [
+    document.getElementById("db-status-home"),
+    document.getElementById("db-status-analysis")
+  ];
+
+  statusPills.forEach(pill => {
+    if (!pill) return;
+    
+    if (online) {
+      pill.className = "status-pill active-db";
+      pill.innerHTML = `<span class="dot green-dot"></span> GOOGLE DRIVE CSV • ACTIVE DATABASE`;
+    } else {
+      pill.className = "status-pill offline-db";
+      pill.innerHTML = `<span class="dot yellow-dot"></span> LOCAL CACHE • DATABASE OFFLINE`;
+    }
+  });
+}
+
+/**
+ * Syncs unsaved records stored in localStorage when database reconnects
+ */
+async function syncOfflineRecords() {
+  const pendingRecords = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
+  if (pendingRecords.length === 0) return;
+
+  console.log(`Syncing ${pendingRecords.length} offline records to Google Drive CSV...`);
+  
+  const remainingRecords = [];
+  for (const record of pendingRecords) {
+    try {
+      const res = await fetch(`${COLAB_BASE_URL}/api/record-patient`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record)
+      });
+      if (!res.ok) remainingRecords.push(record);
+    } catch (e) {
+      remainingRecords.push(record);
+    }
+  }
+
+  localStorage.setItem("pending_cardiac_records", JSON.stringify(remainingRecords));
+  if (remainingRecords.length === 0) {
+    window.onbeforeunload = null; // Clear unsaved warning prompt
+  }
+}
