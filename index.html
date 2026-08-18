@@ -1,307 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cardiovascular Risk Intelligence</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardiovascular Risk Intelligence</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-    <!-- SCREEN 1: LOADING PAGE -->
-    <section id="screen-loading" class="screen active">
-        <div class="loading-container">
-            <h2 class="tracking-widest">INITIALIZING CARDIAC INTELLIGENCE</h2>
-            <div class="progress-bar-container">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <p class="status-text"><span id="progress-text">0%</span> • CALIBRATED</p>
+  <!-- Loading Screen Overlay -->
+  <div id="loading-screen" class="loading-screen hidden">
+    <div class="loading-content">
+      <h2 class="loading-title">INITIALIZING CARDIAC INTELLIGENCE</h2>
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <p id="loading-status" class="loading-status">0% • CALIBRATING</p>
+    </div>
+  </div>
+
+  <!-- Main View Router Container -->
+  <main id="app-viewport">
+
+    <!-- PAGE 1: Home View -->
+    <section id="page-home" class="view-page active">
+      <p class="tagline">LIVE • CARDIOVASCULAR RISK INTELLIGENCE</p>
+      <h1 class="hero-title">See risk before it<br />becomes disease.</h1>
+
+      <div class="glass-hero-card">
+        <div class="stat-box top-left">
+          <p class="stat-val">92.8%</p>
+          <p class="stat-lbl">MODEL ACCURACY</p>
         </div>
+        <div class="stat-box top-right">
+          <p class="stat-val">18,462</p>
+          <p class="stat-lbl">PATIENTS ANALYZED</p>
+        </div>
+        <div class="stat-box bottom-right">
+          <p class="stat-val">13</p>
+          <p class="stat-lbl">CLINICAL MARKERS</p>
+        </div>
+
+        <div class="heart-avatar-wrapper">
+          <img src="3841c4889eaef7a0487ad3cb77850520.jpg" alt="Heart graphic" class="heart-img" />
+        </div>
+      </div>
+
+      <div class="cta-group">
+        <button id="btn-check-risk" class="btn btn-primary">
+          CHECK MY RISK <span class="arrow-icon">↓</span>
+        </button>
+        <button id="btn-find-cardiologist-home" class="btn btn-secondary">
+          FIND A CARDIOLOGIST
+        </button>
+      </div>
+
+      <div class="status-pill">
+        <span class="dot yellow-dot"></span> LOCAL CACHE • DATABASE OFFLINE
+      </div>
     </section>
 
-    <!-- SCREEN 2: HOMEPAGE -->
-    <section id="screen-home" class="screen">
-        <div class="header-tag">LIVE • CARDIOVASCULAR RISK INTELLIGENCE</div>
-        <h1 class="main-title">See risk before it<br>becomes disease.</h1>
 
-        <!-- MAIN DARK DASHBOARD BOARD -->
-        <div class="main-dashboard-card">
-            <!-- Top Left Metric -->
-            <div class="metric-card top-left">
-                <h2>92.8%</h2>
-                <p>MODEL ACCURACY</p>
-            </div>
+    <!-- PAGE 2: Form Input View -->
+    <section id="page-form" class="view-page hidden">
+      <p class="tagline">PERSONALIZED RISK ASSESSMENT</p>
+      <h1 class="hero-title">Enter your clinical markers.</h1>
+      <p class="sub-caption">This experience is for educational screening support and is not a medical diagnosis.</p>
 
-            <!-- Center Heart Model Container -->
-            <div class="heart-interactive-wrapper">
-                <div class="heart-image-container">
-                    <img src="3841c4889eaef7a0487ad3cb77850520.jpg" alt="Anatomical Heart" class="heart-image">
-                    
-                    <!-- Hotspot Pins -->
-                    <div class="hotspot" style="top: 25%; left: 45%;" 
-                        data-title="Aortic Arch" 
-                        data-function="Main artery routing oxygenated blood from the left ventricle to systemic body circulation." 
-                        data-diseases="Aortic Aneurysm, Coarctation of the Aorta, Aortic Dissection">
-                        <span class="pulse-ring"></span>
-                    </div>
+      <form id="risk-form" class="glass-form-card" novalidate>
+        <div class="form-grid">
+          
+          <div class="input-group">
+            <label for="age">AGE</label>
+            <input type="number" id="age" name="age" placeholder="e.g. 54" min="1" max="120" required />
+            <span class="field-error" id="err-age"></span>
+          </div>
 
-                    <div class="hotspot" style="top: 30%; left: 35%;" 
-                        data-title="Superior Vena Cava" 
-                        data-function="Large vein returning deoxygenated blood from the upper body/brain back to the right atrium." 
-                        data-diseases="Superior Vena Cava Syndrome, Venous Thrombosis">
-                        <span class="pulse-ring"></span>
-                    </div>
+          <div class="input-group">
+            <label for="trestbps">RESTING BP (MM HG)</label>
+            <input type="number" id="trestbps" name="trestbps" placeholder="e.g. 130" min="50" max="250" required />
+            <span class="field-error" id="err-trestbps"></span>
+          </div>
 
-                    <div class="hotspot" style="top: 40%; left: 62%;" 
-                        data-title="Pulmonary Trunk & Trunk Branches" 
-                        data-function="Transports oxygen-depleted blood from the right ventricle into the lungs for gas exchange." 
-                        data-diseases="Pulmonary Embolism, Pulmonary Arterial Hypertension, Pulmonary Valve Stenosis">
-                        <span class="pulse-ring"></span>
-                    </div>
+          <div class="input-group">
+            <label for="chol">CHOLESTEROL (MG/DL)</label>
+            <input type="number" id="chol" name="chol" placeholder="e.g. 236" min="100" max="600" required />
+            <span class="field-error" id="err-chol"></span>
+          </div>
 
-                    <div class="hotspot" style="top: 55%; left: 42%;" 
-                        data-title="Right Ventricle" 
-                        data-function="Pumps blood under lower pressure through the pulmonary valve into the lungs." 
-                        data-diseases="Right Ventricular Failure, Arrhythmogenic Right Ventricular Cardiomyopathy (ARVC)">
-                        <span class="pulse-ring"></span>
-                    </div>
+          <div class="input-group">
+            <label for="thalach">MAX HEART RATE ACHIEVED</label>
+            <input type="number" id="thalach" name="thalach" placeholder="e.g. 150" min="60" max="220" required />
+            <span class="field-error" id="err-thalach"></span>
+          </div>
 
-                    <div class="hotspot" style="top: 68%; left: 55%;" 
-                        data-title="Left Ventricle (Apex)" 
-                        data-function="Thick muscular chamber generating high pressure to pump oxygenated blood throughout the body." 
-                        data-diseases="Hypertrophic Cardiomyopathy, Dilated Cardiomyopathy, Left Ventricular Failure">
-                        <span class="pulse-ring"></span>
-                    </div>
+          <div class="input-group full-width">
+            <label for="oldpeak">ST DEPRESSION</label>
+            <input type="number" step="0.1" id="oldpeak" name="oldpeak" placeholder="e.g. 1.8" min="0" max="10" required />
+            <span class="field-error" id="err-oldpeak"></span>
+          </div>
 
-                    <div class="hotspot" style="top: 60%; left: 48%;" 
-                        data-title="Anterior Interventricular Artery (LAD)" 
-                        data-function="Critical coronary artery feeding oxygen-rich blood to the front wall of the heart muscle." 
-                        data-diseases="Coronary Artery Disease (CAD), Myocardial Infarction ('Widowmaker' occlusion)">
-                        <span class="pulse-ring"></span>
-                    </div>
-                </div>
+          <div class="input-group">
+            <select id="sex" name="sex" required>
+              <option value="" disabled selected>Sex</option>
+              <option value="1">Male</option>
+              <option value="0">Female</option>
+            </select>
+            <span class="field-error" id="err-sex"></span>
+          </div>
 
-                <!-- Tooltip Popup -->
-                <div id="heart-popup" class="heart-popup hidden">
-                    <div class="popup-header">
-                        <span id="popup-title">Select a point</span>
-                        <span class="popup-tag">ANATOMICAL DATA</span>
-                    </div>
-                    <p id="popup-function">Hover over any pulsing hotspot to inspect key structures.</p>
-                    <div class="popup-section">
-                        <strong>Associated Diseases:</strong>
-                        <p id="popup-diseases" class="disease-text">-</p>
-                    </div>
-                </div>
-            </div>
+          <div class="input-group">
+            <select id="cp" name="cp" required>
+              <option value="" disabled selected>Chest pain type</option>
+              <option value="0">Typical Angina</option>
+              <option value="1">Atypical Angina</option>
+              <option value="2">Non-anginal Pain</option>
+              <option value="3">Asymptomatic</option>
+            </select>
+            <span class="field-error" id="err-cp"></span>
+          </div>
 
-            <!-- Top Right Metric -->
-            <div class="metric-card top-right">
-                <h2>18,462</h2>
-                <p>PATIENTS ANALYZED</p>
-            </div>
+          <div class="input-group">
+            <select id="restecg" name="restecg" required>
+              <option value="" disabled selected>Resting ECG</option>
+              <option value="0">Normal</option>
+              <option value="1">ST-T Wave Abnormality</option>
+              <option value="2">Left Ventricular Hypertrophy</option>
+            </select>
+            <span class="field-error" id="err-restecg"></span>
+          </div>
 
-            <!-- Bottom Right Metric -->
-            <div class="metric-card bottom-right">
-                <h2>13</h2>
-                <p>CLINICAL MARKERS</p>
-            </div>
+          <div class="input-group">
+            <select id="slope" name="slope" required>
+              <option value="" disabled selected>Peak exercise ST slope</option>
+              <option value="0">Upsloping</option>
+              <option value="1">Flat</option>
+              <option value="2">Downsloping</option>
+            </select>
+            <span class="field-error" id="err-slope"></span>
+          </div>
+
+          <div class="input-group">
+            <select id="ca" name="ca" required>
+              <option value="" disabled selected>Major vessels</option>
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            <span class="field-error" id="err-ca"></span>
+          </div>
+
+          <div class="input-group">
+            <select id="thal" name="thal" required>
+              <option value="" disabled selected>Thalassemia</option>
+              <option value="1">Normal</option>
+              <option value="2">Fixed Defect</option>
+              <option value="3">Reversible Defect</option>
+            </select>
+            <span class="field-error" id="err-thal"></span>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="fbs" name="fbs" />
+            <label for="fbs">Fasting blood sugar over 120 mg/dl</label>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="exang" name="exang" />
+            <label for="exang">Exercise induced angina</label>
+          </div>
+
         </div>
 
-        <!-- Hover/Click Info Tooltip -->
-        <div id="anatomy-info" class="info-tooltip">Hover/Click heart structures to view anatomical details</div>
-
-        <!-- Action Buttons -->
-        <div class="button-group">
-            <button class="btn btn-primary-pill" onclick="navigateTo('screen-markers')">CHECK MY RISK &darr;</button>
-            <button class="btn btn-secondary-pill" onclick="navigateTo('screen-care')">FIND A CARDIOLOGIST</button>
-        </div>
-
-        <!-- Status Indicator -->
-        <div class="status-pill">• LOCAL CACHE • DATABASE OFFLINE</div>
+        <button type="submit" id="btn-analyze" class="btn btn-primary full-btn">
+          Analyze cardiac risk <span class="pulse-icon">∿</span>
+        </button>
+      </form>
     </section>
 
-    <!-- SCREEN 3: CLINICAL MARKERS FORM -->
-    <section id="screen-markers" class="screen">
-        <div class="header-tag">PERSONALIZED RISK ASSESSMENT</div>
-        <h1 class="main-title">Enter your clinical markers.</h1>
-        <p class="subtitle">This experience is for educational screening support and is not a medical diagnosis.</p>
 
-        <form id="clinical-form" class="card form-card" novalidate>
-            <div id="form-error-msg" class="error-banner hidden">Please fix whitespaces, empty fields, or invalid numeric ranges.</div>
-            
-            <div class="form-grid">
-                <div class="input-group">
-                    <label>AGE</label>
-                    <input type="text" id="age" placeholder="e.g. 54" required>
-                </div>
-                <div class="input-group">
-                    <label>RESTING BP (MM HG)</label>
-                    <input type="text" id="trestbps" placeholder="e.g. 130" required>
-                </div>
-                <div class="input-group">
-                    <label>CHOLESTEROL (MG/DL)</label>
-                    <input type="text" id="chol" placeholder="e.g. 236" required>
-                </div>
-                <div class="input-group">
-                    <label>MAX HEART RATE ACHIEVED</label>
-                    <input type="text" id="thalach" placeholder="e.g. 150" required>
-                </div>
-                <div class="input-group">
-                    <label>ST DEPRESSION</label>
-                    <input type="text" id="oldpeak" placeholder="e.g. 1.8" required>
-                </div>
+    <!-- PAGE 3: Risk Analysis Output View -->
+    <section id="page-analysis" class="view-page hidden">
+      <p class="tagline">DEMONSTRATION REPORT • SAMPLE DATA</p>
+      <h1 class="hero-title">Your cardiac risk profile.</h1>
+      
+      <div class="status-pill inline-pill">
+        <span class="dot yellow-dot"></span> LOCAL CACHE • DATABASE OFFLINE
+      </div>
 
-                <div class="input-group">
-                    <label>Sex</label>
-                    <select id="sex" required>
-                        <option value="">Select Sex</option>
-                        <option value="1">Male</option>
-                        <option value="0">Female</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Chest pain type</label>
-                    <select id="cp" required>
-                        <option value="">Select Type</option>
-                        <option value="0">Typical Angina</option>
-                        <option value="1">Atypical Angina</option>
-                        <option value="2">Non-anginal Pain</option>
-                        <option value="3">Asymptomatic</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Resting ECG</label>
-                    <select id="restecg" required>
-                        <option value="">Select ECG Result</option>
-                        <option value="0">Normal</option>
-                        <option value="1">ST-T Wave Abnormality</option>
-                        <option value="2">Left Ventricular Hypertrophy</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Peak exercise ST slope</label>
-                    <select id="slope" required>
-                        <option value="">Select Slope</option>
-                        <option value="0">Upsloping</option>
-                        <option value="1">Flat</option>
-                        <option value="2">Downsloping</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Major vessels (0-3)</label>
-                    <select id="ca" required>
-                        <option value="">Select Number</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Thalassemia</label>
-                    <select id="thal" required>
-                        <option value="">Select Status</option>
-                        <option value="1">Normal</option>
-                        <option value="2">Fixed Defect</option>
-                        <option value="3">Reversable Defect</option>
-                    </select>
-                </div>
-            </div>
+      <div class="analysis-grid">
+        
+        <div class="glass-panel risk-summary-card">
+          <p class="panel-tag">ESTIMATED 10-YEAR RISK</p>
+          <div id="risk-score-display" class="risk-score">34%</div>
+          <p id="risk-stage-display" class="risk-stage">MODERATE RISK • STAGE II</p>
+          <p id="risk-advice-display" class="risk-advice">Clinician review recommended within 30 days.</p>
+        </div>
 
-            <div class="checkbox-row">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="fbs"> Fasting blood sugar over 120 mg/dl
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" id="exang"> Exercise induced angina
-                </label>
-            </div>
+        <div class="glass-panel live-scan-card">
+          <p class="panel-tag">LIVE CARDIAC SCAN</p>
+          <div class="scan-image-wrapper">
+            <img src="3841c4889eaef7a0487ad3cb77850520.jpg" alt="Cardiac Risk Map" class="heart-scan-img" />
+            <div id="pin-anterolateral" class="risk-pin pin-yellow">65</div>
+            <div id="pin-lad" class="risk-pin pin-red">34</div>
+          </div>
+          <p class="scan-caption">Overall risk <span id="overall-val">34%</span> • affected areas identified below</p>
+          <div id="risk-tags-container" class="tag-badges">
+            <span class="badge badge-yellow">ANTERIOR WALL • 65%</span>
+            <span class="badge badge-red">LAD ARTERY • 34%</span>
+          </div>
+        </div>
 
-            <button type="button" class="btn btn-primary btn-full" onclick="processRiskAnalysis()">Analyze cardiac risk &#x2637;</button>
-        </form>
+      </div>
+
+      <div class="glass-panel recommendations-card">
+        <h3 class="panel-title">Recommended next steps</h3>
+        <ol id="next-steps-list" class="steps-list">
+          <li>Book a cardiology consultation.</li>
+          <li>Discuss lipid management and blood-pressure targets.</li>
+          <li>Begin clinician-approved activity, nutrition, and follow-up plan.</li>
+        </ol>
+
+        <div class="guidelines-box">
+          <p><strong>Dietary Restraints:</strong> <span id="diet-guideline">Reduce sodium intake to < 2,000 mg/day, limit saturated fats, eliminate trans fats.</span></p>
+          <p><strong>Physical Restraints:</strong> <span id="exercise-guideline">Moderate aerobic exercise 150 mins/week. Avoid sudden heavy resistance training without clearance.</span></p>
+        </div>
+
+        <button id="btn-find-care-analysis" class="btn btn-primary inline-btn">
+          FIND A CARDIOLOGIST NEAR ME
+        </button>
+      </div>
+
+      <p class="disclaimer">This screen is an illustrative decision-support experience. It cannot replace care from a qualified medical professional.</p>
     </section>
 
-    <!-- SCREEN 4: CARDIAC RISK PROFILE REPORT -->
-    <section id="screen-report" class="screen">
-        <div class="header-tag">DEMONSTRATION REPORT • SAMPLE DATA</div>
-        <h1 class="main-title">Your cardiac risk profile.</h1>
-        <div class="status-pill mb-6">• LOCAL CACHE • DATABASE OFFLINE</div>
 
-        <div class="report-grid">
-            <div class="card report-score-card">
-                <p class="section-label">ESTIMATED 10-YEAR RISK</p>
-                <h1 class="risk-score" id="risk-score-val">0%</h1>
-                <h3 id="risk-stage-val">LOW RISK</h3>
-                <p id="risk-advice" class="text-sm">Clinician review recommended during regular annual checkup.</p>
-            </div>
+    <!-- PAGE 4: Care Routing & Doctor Booking View -->
+    <section id="page-routing" class="view-page hidden">
+      <p class="tagline">CARE ROUTING • NEXT STEP</p>
+      <h1 class="hero-title">Find the right cardiac care.</h1>
+      <p class="sub-caption">Choose a specialist or cardiac facility based on your risk profile, symptoms, and preferred level of care.</p>
 
-            <div class="card scan-card">
-                <p class="section-label text-center">LIVE CARDIAC SCAN</p>
-                <div class="scan-heart-wrapper">
-                    <svg viewBox="0 0 400 400" class="scan-heart-svg">
-                        <path id="scan-base-heart" d="M200,280 C240,240 250,160 200,140 C150,160 160,240 200,280 Z" fill="#3a1c22" stroke="#ff3b5c" stroke-width="2"/>
-                        <path id="scan-lad-artery" d="M195,150 Q190,210 205,265" stroke="#ff4d4d" stroke-width="4" fill="none"/>
-                        
-                        <!-- Overlay Highlight Nodes -->
-                        <g id="highlight-nodes"></g>
-                    </svg>
-                </div>
-                <p class="text-sm text-center" id="scan-summary-text">Overall risk 0% • No severe localized damage detected</p>
-                <div class="pill-group" id="affected-pills"></div>
-            </div>
+      <p class="section-label">REFERRAL OPTIONS</p>
+
+      <div class="referral-grid">
+        
+        <div class="glass-panel referral-card">
+          <p class="card-category">SPECIALIST CARE</p>
+          <h3>Cardiologist search</h3>
+          <p>Browse nearby cardiologists for a clinical consultation, follow-up testing, or treatment planning.</p>
+          <button class="btn btn-primary card-btn" onclick="openNearbyHospitals('Cardiologist')">VIEW CARE OPTIONS</button>
         </div>
 
-        <div class="card next-steps-card">
-            <h3>Model Accuracy & Reasoning</h3>
-            <p id="reasoning-text" class="reasoning-box"></p>
-            <h3>Recommended next steps</h3>
-            <ol>
-                <li>Book a cardiology consultation.</li>
-                <li>Discuss lipid management and blood-pressure targets.</li>
-                <li>Begin clinician-approved activity, nutrition, and follow-up plan.</li>
-            </ol>
-            <button class="btn btn-primary" onclick="navigateTo('screen-care')">FIND A CARDIOLOGIST NEAR ME</button>
+        <div class="glass-panel referral-card">
+          <p class="card-category">HOSPITAL CARE</p>
+          <h3>Cardiac hospital search</h3>
+          <p>Locate hospitals and cardiac centers equipped for specialist evaluation, imaging, and treatment.</p>
+          <button class="btn btn-primary card-btn" onclick="openNearbyHospitals('Cardiac Hospital')">VIEW CARE OPTIONS</button>
         </div>
-        <p class="disclaimer text-center">This screen is an illustrative decision-support experience. It cannot replace care from a qualified medical professional.</p>
+
+        <div class="glass-panel referral-card">
+          <p class="card-category">URGENT CARE</p>
+          <h3>Emergency cardiac care</h3>
+          <p>For chest pain, breathing difficulty, fainting, or sudden severe symptoms, seek emergency services immediately.</p>
+          <button class="btn btn-primary card-btn" onclick="connectNationalEmergency()">VIEW CARE OPTIONS</button>
+        </div>
+
+      </div>
+
+      <div class="glass-panel alert-banner">
+        <h4>Urgent symptoms require urgent care.</h4>
+        <p>If you believe you may be experiencing a medical emergency, contact local emergency services immediately.</p>
+      </div>
     </section>
 
-    <!-- SCREEN 5: FIND THE RIGHT CARDIAC CARE -->
-    <section id="screen-care" class="screen">
-        <div class="header-tag">CARE ROUTING • NEXT STEP</div>
-        <h1 class="main-title">Find the right cardiac care.</h1>
-        <p class="subtitle">Choose a specialist or cardiac facility based on your risk profile, symptoms, and preferred level of care.</p>
+  </main>
 
-        <div class="care-grid">
-            <div class="card care-card">
-                <span class="card-tag">SPECIALIST CARE</span>
-                <h2>Cardiologist search</h2>
-                <p>Browse nearby cardiologists for a clinical consultation, follow-up testing, or treatment planning.</p>
-                <button class="btn btn-primary" onclick="redirectToHospitals('Cardiologists')">VIEW CARE OPTIONS</button>
-            </div>
-
-            <div class="card care-card">
-                <span class="card-tag">HOSPITAL CARE</span>
-                <h2>Cardiac hospital search</h2>
-                <p>Locate hospitals and cardiac centers equipped for specialist evaluation, imaging, and treatment.</p>
-                <button class="btn btn-primary" onclick="redirectToHospitals('Cardiac Hospitals')">VIEW CARE OPTIONS</button>
-            </div>
-
-            <div class="card care-card">
-                <span class="card-tag">URGENT CARE</span>
-                <h2>Emergency cardiac care</h2>
-                <p>For chest pain, breathing difficulty, fainting, or sudden severe symptoms, seek emergency services immediately.</p>
-                <button class="btn btn-primary" onclick="redirectToHospitals('Emergency Cardiac Care')">VIEW CARE OPTIONS</button>
-            </div>
-        </div>
-
-        <div class="urgent-banner">
-            <h3>Urgent symptoms require urgent care.</h3>
-            <p>If you believe you may be experiencing a medical emergency, contact local emergency services immediately.</p>
-        </div>
-    </section>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
