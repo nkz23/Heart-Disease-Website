@@ -201,3 +201,54 @@ function connectNationalEmergency() {
     alert("Emergency Service: Call 1990 (National Pre-Hospital Emergency Hotline) or contact your nearest emergency room immediately.");
   }
 }
+
+
+
+// Replace with the public Ngrok URL printed in your Google Colab console
+const COLAB_API_URL = "https://irregular-fled-fastball.ngrok-free.dev/api/record-patient";
+
+
+// Function to append a new patient record
+async function savePatientRecord(patientData) {
+  try {
+    // Attempt to send record to Google Drive via Colab Flask API
+    const response = await fetch(COLAB_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patientData)
+    });
+
+    if (response.ok) {
+      console.log("Entry successfully appended to Google Drive CSV.");
+      return true;
+    } else {
+      throw new Error("Server error or CSV unlinked");
+    }
+  } catch (error) {
+    console.warn("Colab API unavailable. Saving record locally...", error);
+    saveLocally(patientData);
+    return false;
+  }
+}
+
+// Fallback: Save unsaved entries to browser localStorage
+function saveLocally(data) {
+  let pendingRecords = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
+  pendingRecords.push(data);
+  localStorage.setItem("pending_cardiac_records", JSON.stringify(pendingRecords));
+  
+  // Enable warning prompt before tab close/reload
+  enableUnsavedWarning();
+}
+
+// Warn user if reloading/closing while unsaved data exists
+function enableUnsavedWarning() {
+  window.onbeforeunload = function (e) {
+    const pending = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
+    if (pending.length > 0) {
+      const msg = "You have unsaved clinical records stored locally. If you reload or leave without connecting to the CSV server, this data will be erased.";
+      e.returnValue = msg;
+      return msg;
+    }
+  };
+}
