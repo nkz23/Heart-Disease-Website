@@ -202,91 +202,72 @@ function connectNationalEmergency() {
   }
 }
 
+/**
+ * Reads form data matching the interface screenshot, computes risk,
+ * and appends the entry to the CSV via Flask API or local cache.
+ */
+async function processAndSaveFormData() {
+  // 1. Extract numerical inputs from form fields
+  const age = parseFloat(document.getElementById("age").value) || 0;
+  const trestbps = parseFloat(document.getElementById("trestbps").value) || 0; // Resting BP
+  const chol = parseFloat(document.getElementById("chol").value) || 0;         // Cholesterol
+  const thalach = parseFloat(document.getElementById("thalach").value) || 0;   // Max Heart Rate
+  const oldpeak = parseFloat(document.getElementById("oldpeak").value) || 0;   // ST Depression
 
+  // 2. Extract and encode categorical select dropdowns
+  const sex = parseInt(document.getElementById("sex").value);         // 0: Female, 1: Male
+  const cp = parseInt(document.getElementById("cp").value);           // 0: Typical Angina, etc.
+  const restecg = parseInt(document.getElementById("restecg").value); // 0: Normal, 1: ST-T, 2: LVH
+  const slope = parseInt(document.getElementById("slope").value);     // 0: Upsloping, 1: Flat, 2: Downsloping
+  const ca = parseInt(document.getElementById("ca").value);           // Major vessels (0-3)
+  const thal = parseInt(document.getElementById("thal").value);       // 1: Normal, 2: Fixed, 3: Reversible
 
-// Replace with the public Ngrok URL printed in your Google Colab console
-const COLAB_API_URL = "https://irregular-fled-fastball.ngrok-free.dev/api/record-patient";
+  // 3. Extract checkbox boolean flags (1 = True, 0 = False)
+  const fbs = document.getElementById("fbs").checked ? 1 : 0;     // Fasting blood sugar > 120 mg/dl
+  const exang = document.getElementById("exang").checked ? 1 : 0;   // Exercise induced angina
 
-
-// Function to append a new patient record
-async function savePatientRecord(patientData) {
-  try {
-    // Attempt to send record to Google Drive via Colab Flask API
-    const response = await fetch(COLAB_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patientData)
-    });
-
-    if (response.ok) {
-      console.log("Entry successfully appended to Google Drive CSV.");
-      return true;
-    } else {
-      throw new Error("Server error or CSV unlinked");
-    }
-  } catch (error) {
-    console.warn("Colab API unavailable. Saving record locally...", error);
-    saveLocally(patientData);
-    return false;
-  }
-}
-
-// Fallback: Save unsaved entries to browser localStorage
-function saveLocally(data) {
-  let pendingRecords = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
-  pendingRecords.push(data);
-  localStorage.setItem("pending_cardiac_records", JSON.stringify(pendingRecords));
+  // 4. Calculate overall risk percentage and target presence
+  // Example state based on image: age=1, trestbps=50, chol=100, thalach=60, oldpeak=0.1
+  let calculatedRisk = Math.round(
+    ((age / 100) * 0.2 + (chol / 400) * 0.25 + (trestbps / 200) * 0.25 + (oldpeak / 5) * 0.3) * 100
+  );
+  calculatedRisk = Math.min(Math.max(calculatedRisk, 1), 99);
   
-  // Enable warning prompt before tab close/reload
-  enableUnsavedWarning();
-}
+  // Define ground truth binary outcome (1 = Heart Disease Present, 0 = No Disease)
+  const target = calculatedRisk >= 50 ? 1 : 0;
 
-// Warn user if reloading/closing while unsaved data exists
-function enableUnsavedWarning() {
-  window.onbeforeunload = function (e) {
-    const pending = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
-    if (pending.length > 0) {
-      const msg = "You have unsaved clinical records stored locally. If you reload or leave without connecting to the CSV server, this data will be erased.";
-      e.returnValue = msg;
-      return msg;
-    }
+  // 5. Structure payload to match exact 14 columns of the Cleveland Dataset
+  const patientRecord = {
+    age: age,
+    sex: sex,
+    cp: cp,
+    trestbps: trestbps,
+    chol: chol,
+    fbs: fbs,
+    restecg: restecg,
+    thalach: thalach,
+    exang: exang,
+    oldpeak: oldpeak,
+    slope: slope,
+    ca: ca,
+    thal: thal,
+    target: target,
+    timestamp: new Date().toISOString()
   };
+
+  // 6. Transmit payload to Google Drive CSV backend (or save locally if offline)
+  await savePatientRecord(patientRecord);
 }
 
-
-const COLAB_BASE_URL = "https://your-ngrok-subdomain.ngrok-free.app";
-let isDatabaseOnline = false;
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Initial check on page load and periodic ping every 10 seconds
-  checkDatabaseStatus();
-  setInterval(checkDatabaseStatus, 10000);
-
-  // ... rest of your event listeners ...
+// Attach execution handler to form submit button
+document.getElementById("risk-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (validateForm()) {
+    await processAndSaveFormData();
+    switchPage("page-form", "page-analysis", 1000);
+  }
 });
 
-/**
- * Checks if the Colab Flask server is online and updates status pills
- */
-async function checkDatabaseStatus() {
-  try {
-    const response = await fetch(`${COLAB_BASE_URL}/api/health`, { method: "GET" });
-    if (response.ok) {
-      updateStatusPills(true);
-      if (!isDatabaseOnline) {
-        // If coming back online, sync any unsaved offline entries
-        syncOfflineRecords();
-      }
-      isDatabaseOnline = true;
-    } else {
-      updateStatusPills(false);
-      isDatabaseOnline = false;
-    }
-  } catch (err) {
-    updateStatusPills(false);
-    isDatabaseOnline = false;
-  }
-}
 
 /**
  * Updates status pills across views to reflect current active state
