@@ -1,29 +1,40 @@
+// Base URL pointing to public Ngrok Flask API instance running in Colab
+const COLAB_BASE_URL = "https://xxxx-xx-xxx-xxx-xxx.ngrok-free.app"; // Replace with active Ngrok URL
+let isDatabaseOnline = false;
+
 document.addEventListener("DOMContentLoaded", () => {
   // Navigation trigger bindings
-  document.getElementById("btn-check-risk").addEventListener("click", () => {
+  document.getElementById("btn-check-risk")?.addEventListener("click", () => {
     switchPage("page-home", "page-form", 800);
   });
 
-  document.getElementById("btn-find-cardiologist-home").addEventListener("click", () => {
+  document.getElementById("btn-find-cardiologist-home")?.addEventListener("click", () => {
     switchPage("page-home", "page-routing", 800);
   });
 
-  document.getElementById("btn-find-care-analysis").addEventListener("click", () => {
+  document.getElementById("btn-find-care-analysis")?.addEventListener("click", () => {
     switchPage("page-analysis", "page-routing", 600);
   });
 
   // Setup real-time dynamic validation on form inputs
   setupRealtimeValidation();
 
-  // Handle Form Submission
+  // Handle Form Submission (Single unified listener)
   const form = document.getElementById("risk-form");
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      calculateAndDisplayRisk();
-      switchPage("page-form", "page-analysis", 1200);
-    }
-  });
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (validateForm()) {
+        calculateAndDisplayRisk();
+        await processAndSaveFormData();
+        switchPage("page-form", "page-analysis", 1000);
+      }
+    });
+  }
+
+  // Database Connection Health Check & Periodic Ping
+  checkDatabaseStatus();
+  setInterval(checkDatabaseStatus, 10000);
 });
 
 /**
@@ -33,6 +44,8 @@ function switchPage(fromPageId, toPageId, delayMs = 1000) {
   const loadingScreen = document.getElementById("loading-screen");
   const progressBar = document.getElementById("progress-bar");
   const statusText = document.getElementById("loading-status");
+
+  if (!loadingScreen) return;
 
   loadingScreen.classList.remove("hidden");
   let progress = 0;
@@ -45,19 +58,26 @@ function switchPage(fromPageId, toPageId, delayMs = 1000) {
       progress = 100;
       clearInterval(timer);
 
-      document.getElementById(fromPageId).classList.add("hidden");
-      document.getElementById(fromPageId).classList.remove("active");
+      const fromElem = document.getElementById(fromPageId);
+      const toElem = document.getElementById(toPageId);
 
-      document.getElementById(toPageId).classList.remove("hidden");
-      document.getElementById(toPageId).classList.add("active");
+      if (fromElem) {
+        fromElem.classList.add("hidden");
+        fromElem.classList.remove("active");
+      }
+
+      if (toElem) {
+        toElem.classList.remove("hidden");
+        toElem.classList.add("active");
+      }
 
       setTimeout(() => {
         loadingScreen.classList.add("hidden");
-        progressBar.style.width = "0%";
+        if (progressBar) progressBar.style.width = "0%";
       }, 150);
     }
-    progressBar.style.width = `${progress}%`;
-    statusText.innerText = `${Math.round(progress)}% • CALIBRATING`;
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (statusText) statusText.innerText = `${Math.round(progress)}% • CALIBRATING`;
   }, intervalTime);
 }
 
@@ -76,7 +96,6 @@ function validateField(input) {
   const errSpan = document.getElementById(`err-${input.id}`);
   let rawValue = input.value;
 
-  // Real-time Trim Whitespaces
   if (typeof rawValue === 'string') {
     rawValue = rawValue.trim();
   }
@@ -136,141 +155,147 @@ function validateForm() {
  * Internal risk estimation heuristic based on input clinical markers
  */
 function calculateAndDisplayRisk() {
-  const age = parseFloat(document.getElementById("age").value) || 50;
-  const chol = parseFloat(document.getElementById("chol").value) || 200;
-  const trestbps = parseFloat(document.getElementById("trestbps").value) || 120;
-  const oldpeak = parseFloat(document.getElementById("oldpeak").value) || 0;
+  const age = parseFloat(document.getElementById("age")?.value) || 50;
+  const chol = parseFloat(document.getElementById("chol")?.value) || 200;
+  const trestbps = parseFloat(document.getElementById("trestbps")?.value) || 120;
+  const oldpeak = parseFloat(document.getElementById("oldpeak")?.value) || 0;
 
-  // Basic diagnostic model calculation for risk estimation
   let calculatedRisk = Math.round(((age / 100) * 0.3 + (chol / 400) * 0.3 + (trestbps / 200) * 0.2 + (oldpeak / 5) * 0.2) * 100);
   calculatedRisk = Math.min(Math.max(calculatedRisk, 5), 95);
 
-  document.getElementById("risk-score-display").innerText = `${calculatedRisk}%`;
-  document.getElementById("overall-val").innerText = `${calculatedRisk}%`;
+  const scoreDisplay = document.getElementById("risk-score-display");
+  const overallDisplay = document.getElementById("overall-val");
+  if (scoreDisplay) scoreDisplay.innerText = `${calculatedRisk}%`;
+  if (overallDisplay) overallDisplay.innerText = `${calculatedRisk}%`;
 
-  // Dynamically update recommendations according to risk level
   const dietElem = document.getElementById("diet-guideline");
   const exerciseElem = document.getElementById("exercise-guideline");
   const stageElem = document.getElementById("risk-stage-display");
 
   if (calculatedRisk > 50) {
-    stageElem.innerText = "HIGH RISK • STAGE III";
-    dietElem.innerText = "Strict low-sodium (<1,500 mg/day), zero trans-fats, strict glycemic control.";
-    exerciseElem.innerText = "Low-impact supervised walking only. Clearance required before higher exertive stress.";
+    if (stageElem) stageElem.innerText = "HIGH RISK • STAGE III";
+    if (dietElem) dietElem.innerText = "Strict low-sodium (<1,500 mg/day), zero trans-fats, strict glycemic control.";
+    if (exerciseElem) exerciseElem.innerText = "Low-impact supervised walking only. Clearance required before higher exertive stress.";
   } else if (calculatedRisk > 25) {
-    stageElem.innerText = "MODERATE RISK • STAGE II";
-    dietElem.innerText = "Reduce sodium intake to < 2,000 mg/day, limit saturated fats, eliminate trans fats.";
-    exerciseElem.innerText = "Moderate aerobic exercise 150 mins/week. Avoid sudden heavy resistance training without clearance.";
+    if (stageElem) stageElem.innerText = "MODERATE RISK • STAGE II";
+    if (dietElem) dietElem.innerText = "Reduce sodium intake to < 2,000 mg/day, limit saturated fats, eliminate trans fats.";
+    if (exerciseElem) exerciseElem.innerText = "Moderate aerobic exercise 150 mins/week. Avoid sudden heavy resistance training without clearance.";
   } else {
-    stageElem.innerText = "LOW RISK • STAGE I";
-    dietElem.innerText = "Maintain balanced Mediterranean diet high in whole grains, legumes, and omega-3 fats.";
-    exerciseElem.innerText = "Regular cardiovascular training 150–300 mins/week with strength training 2 days/week.";
+    if (stageElem) stageElem.innerText = "LOW RISK • STAGE I";
+    if (dietElem) dietElem.innerText = "Maintain balanced Mediterranean diet high in whole grains, legumes, and omega-3 fats.";
+    if (exerciseElem) exerciseElem.innerText = "Regular cardiovascular training 150–300 mins/week with strength training 2 days/week.";
   }
 }
 
 /**
- * Care Routing: Opens Google Maps search centered on user location or fallback
- */
-function openNearbyHospitals(queryType) {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}/@${lat},${lng},14z`, '_blank');
-      },
-      () => {
-        // Fallback to query without exact coordinates
-        window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}+near+me`, '_blank');
-      }
-    );
-  } else {
-    window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}+near+me`, '_blank');
-  }
-}
-
-/**
- * Care Routing: Connects to National Emergency & Inquiry services
- */
-function connectNationalEmergency() {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    // Direct dispatch to national medical emergency hotline
-    window.location.href = "tel:1990";
-  } else {
-    alert("Emergency Service: Call 1990 (National Pre-Hospital Emergency Hotline) or contact your nearest emergency room immediately.");
-  }
-}
-
-/**
- * Reads form data matching the interface screenshot, computes risk,
- * and appends the entry to the CSV via Flask API or local cache.
+ * Reads form data, computes target diagnosis, and structures Cleveland dataset payload
  */
 async function processAndSaveFormData() {
-  // 1. Extract numerical inputs from form fields
-  const age = parseFloat(document.getElementById("age").value) || 0;
-  const trestbps = parseFloat(document.getElementById("trestbps").value) || 0; // Resting BP
-  const chol = parseFloat(document.getElementById("chol").value) || 0;         // Cholesterol
-  const thalach = parseFloat(document.getElementById("thalach").value) || 0;   // Max Heart Rate
-  const oldpeak = parseFloat(document.getElementById("oldpeak").value) || 0;   // ST Depression
+  const age = parseFloat(document.getElementById("age")?.value) || 0;
+  const trestbps = parseFloat(document.getElementById("trestbps")?.value) || 0;
+  const chol = parseFloat(document.getElementById("chol")?.value) || 0;
+  const thalach = parseFloat(document.getElementById("thalach")?.value) || 0;
+  const oldpeak = parseFloat(document.getElementById("oldpeak")?.value) || 0;
 
-  // 2. Extract and encode categorical select dropdowns
-  const sex = parseInt(document.getElementById("sex").value);         // 0: Female, 1: Male
-  const cp = parseInt(document.getElementById("cp").value);           // 0: Typical Angina, etc.
-  const restecg = parseInt(document.getElementById("restecg").value); // 0: Normal, 1: ST-T, 2: LVH
-  const slope = parseInt(document.getElementById("slope").value);     // 0: Upsloping, 1: Flat, 2: Downsloping
-  const ca = parseInt(document.getElementById("ca").value);           // Major vessels (0-3)
-  const thal = parseInt(document.getElementById("thal").value);       // 1: Normal, 2: Fixed, 3: Reversible
+  const sex = parseInt(document.getElementById("sex")?.value) || 0;
+  const cp = parseInt(document.getElementById("cp")?.value) || 0;
+  const restecg = parseInt(document.getElementById("restecg")?.value) || 0;
+  const slope = parseInt(document.getElementById("slope")?.value) || 0;
+  const ca = parseInt(document.getElementById("ca")?.value) || 0;
+  const thal = parseInt(document.getElementById("thal")?.value) || 0;
 
-  // 3. Extract checkbox boolean flags (1 = True, 0 = False)
-  const fbs = document.getElementById("fbs").checked ? 1 : 0;     // Fasting blood sugar > 120 mg/dl
-  const exang = document.getElementById("exang").checked ? 1 : 0;   // Exercise induced angina
+  const fbs = document.getElementById("fbs")?.checked ? 1 : 0;
+  const exang = document.getElementById("exang")?.checked ? 1 : 0;
 
-  // 4. Calculate overall risk percentage and target presence
-  // Example state based on image: age=1, trestbps=50, chol=100, thalach=60, oldpeak=0.1
   let calculatedRisk = Math.round(
     ((age / 100) * 0.2 + (chol / 400) * 0.25 + (trestbps / 200) * 0.25 + (oldpeak / 5) * 0.3) * 100
   );
   calculatedRisk = Math.min(Math.max(calculatedRisk, 1), 99);
-  
-  // Define ground truth binary outcome (1 = Heart Disease Present, 0 = No Disease)
   const target = calculatedRisk >= 50 ? 1 : 0;
 
-  // 5. Structure payload to match exact 14 columns of the Cleveland Dataset
   const patientRecord = {
-    age: age,
-    sex: sex,
-    cp: cp,
-    trestbps: trestbps,
-    chol: chol,
-    fbs: fbs,
-    restecg: restecg,
-    thalach: thalach,
-    exang: exang,
-    oldpeak: oldpeak,
-    slope: slope,
-    ca: ca,
-    thal: thal,
+    age, sex, cp, trestbps, chol, fbs,
+    restecg, thalach, exang, oldpeak, slope, ca, thal,
     target: target,
     timestamp: new Date().toISOString()
   };
 
-  // 6. Transmit payload to Google Drive CSV backend (or save locally if offline)
   await savePatientRecord(patientRecord);
 }
 
-// Attach execution handler to form submit button
-document.getElementById("risk-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (validateForm()) {
-    await processAndSaveFormData();
-    switchPage("page-form", "page-analysis", 1000);
-  }
-});
+/**
+ * Saves patient record to GitHub repository CSV backend via Colab Flask API
+ */
+async function savePatientRecord(patientData) {
+  try {
+    const response = await fetch(`${COLAB_BASE_URL}/api/record-patient`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patientData)
+    });
 
+    if (response.ok) {
+      showToast("Data successfully saved to GitHub CSV!");
+      return true;
+    } else {
+      throw new Error("Server response error");
+    }
+  } catch (error) {
+    console.warn("API offline. Caching entry locally...", error);
+    saveLocally(patientData);
+    showToast("Server offline: Data cached locally.");
+    return false;
+  }
+}
 
 /**
- * Updates status pills across views to reflect current active state
+ * Fallback: Cache unsaved entries in localStorage
+ */
+function saveLocally(data) {
+  let pendingRecords = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
+  pendingRecords.push(data);
+  localStorage.setItem("pending_cardiac_records", JSON.stringify(pendingRecords));
+  enableUnsavedWarning();
+}
+
+/**
+ * Warns user if attempting to leave or reload page with unsaved local entries
+ */
+function enableUnsavedWarning() {
+  window.onbeforeunload = function (e) {
+    const pending = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
+    if (pending.length > 0) {
+      const msg = "You have unsaved clinical records stored locally. Reloading may erase unsaved data.";
+      e.returnValue = msg;
+      return msg;
+    }
+  };
+}
+
+/**
+ * Periodically checks Flask backend database status
+ */
+async function checkDatabaseStatus() {
+  try {
+    const response = await fetch(`${COLAB_BASE_URL}/api/health`, { method: "GET" });
+    if (response.ok) {
+      updateStatusPills(true);
+      if (!isDatabaseOnline) {
+        syncOfflineRecords();
+      }
+      isDatabaseOnline = true;
+    } else {
+      updateStatusPills(false);
+      isDatabaseOnline = false;
+    }
+  } catch (err) {
+    updateStatusPills(false);
+    isDatabaseOnline = false;
+  }
+}
+
+/**
+ * Updates status pills across views to reflect active backend state
  */
 function updateStatusPills(online) {
   const statusPills = [
@@ -283,7 +308,7 @@ function updateStatusPills(online) {
     
     if (online) {
       pill.className = "status-pill active-db";
-      pill.innerHTML = `<span class="dot green-dot"></span> GOOGLE DRIVE CSV • ACTIVE DATABASE`;
+      pill.innerHTML = `<span class="dot green-dot"></span> GITHUB CSV • ACTIVE DATABASE`;
     } else {
       pill.className = "status-pill offline-db";
       pill.innerHTML = `<span class="dot yellow-dot"></span> LOCAL CACHE • DATABASE OFFLINE`;
@@ -292,13 +317,13 @@ function updateStatusPills(online) {
 }
 
 /**
- * Syncs unsaved records stored in localStorage when database reconnects
+ * Syncs unsaved records stored in localStorage when API connection recovers
  */
 async function syncOfflineRecords() {
   const pendingRecords = JSON.parse(localStorage.getItem("pending_cardiac_records") || "[]");
   if (pendingRecords.length === 0) return;
 
-  console.log(`Syncing ${pendingRecords.length} offline records to Google Drive CSV...`);
+  console.log(`Syncing ${pendingRecords.length} offline records to GitHub CSV...`);
   
   const remainingRecords = [];
   for (const record of pendingRecords) {
@@ -316,6 +341,55 @@ async function syncOfflineRecords() {
 
   localStorage.setItem("pending_cardiac_records", JSON.stringify(remainingRecords));
   if (remainingRecords.length === 0) {
-    window.onbeforeunload = null; // Clear unsaved warning prompt
+    window.onbeforeunload = null;
+  }
+}
+
+/**
+ * Displays temporary popup toast message
+ */
+function showToast(message) {
+  const toast = document.getElementById("toast-notification");
+  const msgElem = document.getElementById("toast-message");
+
+  if (!toast || !msgElem) return;
+
+  msgElem.innerText = message;
+  toast.classList.remove("hidden");
+
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 3500);
+}
+
+/**
+ * Care Routing: Opens Google Maps search centered on user location or fallback
+ */
+function openNearbyHospitals(queryType) {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}/@${lat},${lng},14z`, '_blank');
+      },
+      () => {
+        window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}+near+me`, '_blank');
+      }
+    );
+  } else {
+    window.open(`https://www.google.com/maps/search/${encodeURIComponent(queryType)}+near+me`, '_blank');
+  }
+}
+
+/**
+ * Care Routing: Connects to National Emergency & Inquiry services
+ */
+function connectNationalEmergency() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = "tel:1990";
+  } else {
+    alert("Emergency Service: Call 1990 (National Pre-Hospital Emergency Hotline) or contact your nearest emergency room immediately.");
   }
 }
